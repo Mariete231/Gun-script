@@ -1,0 +1,55 @@
+local tool = script.Parent
+local handle = tool.Handle
+
+local remoteEvent = tool.RemoteEvent
+
+local player = tool.Parent.Parent
+local character = player.Character or player.CharacterAdded:Wait()
+
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {character}
+raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+
+local function visualizeRaycast(origin, target)
+	local segmentLength = (origin - target).Magnitude
+	
+	local visualPart = Instance.new("Part")
+	visualPart.Anchored = true
+	visualPart.CanCollide = false
+	visualPart.BrickColor = BrickColor.new("Bright yellow")
+	visualPart.Size = Vector3.new(0.1, 0.1, segmentLength)
+	
+	visualPart.CFrame = CFrame.lookAt(origin, target) * CFrame.new(0, 0, -segmentLength/2)
+	
+	visualPart.Parent = workspace
+	
+	game:GetService("Debris"):AddItem(visualPart, 0.1)
+end
+
+local function createBulletHole(pos, normal)
+	local newBulletHole = game:GetService("ServerStorage").BulletHole:Clone()
+	
+	newBulletHole.CFrame = CFrame.lookAt(pos, pos + normal)
+	newBulletHole.Parent = workspace
+	
+	game:GetService("Debris"):AddItem(newBulletHole, 3)
+end
+
+remoteEvent.OnServerEvent:Connect(function(_, mousePosition)
+	local raycastResult = workspace:Raycast(handle.BulletOrigin.WorldPosition, (mousePosition - handle.BulletOrigin.WorldPosition) * 600, raycastParams)
+	
+	if raycastResult then
+		visualizeRaycast(handle.BulletOrigin.WorldPosition, raycastResult.Position)
+		
+		local hitPart = raycastResult.Instance
+		local hum = hitPart.Parent:FindFirstChildOfClass("Humanoid")
+		
+		if hum then
+			hum:TakeDamage(30)
+		else
+			createBulletHole(raycastResult.Position, raycastResult.Normal)
+		end
+	else
+		visualizeRaycast(handle.BulletOrigin.WorldPosition, (CFrame.lookAt(handle.BulletOrigin.WorldPosition, mousePosition) * CFrame.new(0, 0, -600)).Position)
+	end
+end)

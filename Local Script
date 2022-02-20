@@ -1,0 +1,9 @@
+local player = game:GetService("Players").LocalPlayer
+
+local mouse = player:GetMouse()
+
+local tool = script.Parent
+
+script.Parent.Activated:Connect(function()
+	tool.RemoteEvent:FireServer(mouse.Hit.Position)
+end)
